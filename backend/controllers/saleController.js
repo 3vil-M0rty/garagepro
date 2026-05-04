@@ -190,3 +190,42 @@ const getSalesStats = async (req, res, next) => {
 };
 
 module.exports = { getSales, getSale, createSale, getSalesStats };
+
+// @desc    Delete sale + restore stock
+// @route   DELETE /api/sales/:id
+// @access  Admin
+const deleteSale = async (req, res, next) => {
+  const session = await Sale.startSession();
+  session.startTransaction();
+  try {
+    const sale = await Sale.findById(req.params.id).session(session);
+    if (!sale) {
+      await session.abortTransaction();
+      return res.status(404).json({ success: false, message: 'Vente introuvable' });
+    }
+
+    // Restore stock for each item
+    for (const item of sale.items) {
+      await Product.findByIdAndUpdate(
+        item.product,
+        { $inc: { quantity: item.quantity } },
+        { session }
+      );
+    }
+
+    await Sale.findByIdAndDelete(req.params.id).session(session);
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: `Vente ${sale.receiptNumber} supprimée et stock restauré`,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    next(error);
+  } finally {
+    session.endSession();
+  }
+};
+
+module.exports = { getSales, getSale, createSale, getSalesStats, deleteSale };

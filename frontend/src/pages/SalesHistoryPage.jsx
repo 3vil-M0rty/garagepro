@@ -1,20 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReactToPrint } from 'react-to-print';
-import { History, Printer, Eye, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { History, Printer, Eye, X, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import Pagination from '../components/common/Pagination';
 import Modal from '../components/common/Modal';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import Receipt from '../components/sales/Receipt';
 import { useAuthStore } from '../store/authStore';
 
 const pmLabel = (pm) => ({ cash: 'Espèces', card: 'Carte', transfer: 'Virement', other: 'Autre' }[pm] || pm);
 const pmBadge = (pm) => ({ cash: 'badge-green', card: 'badge-blue', transfer: 'badge-purple', other: 'badge-yellow' }[pm] || 'badge-blue');
 
-// Mobile card for a single sale row
-function SaleCard({ sale, isAdmin, fmt, onView, onPrint }) {
+// Mobile card
+function SaleCard({ sale, isAdmin, fmt, onView, onPrint, onDelete }) {
   return (
     <div className="p-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
       <div className="flex items-start justify-between gap-3">
@@ -34,7 +35,9 @@ function SaleCard({ sale, isAdmin, fmt, onView, onPrint }) {
         <div className="text-right flex-shrink-0">
           <p className="font-bold text-green-400 tabular-nums">{fmt(sale.total)}</p>
           <p className="text-xs text-slate-500">MAD</p>
-          <span className={`badge text-xs mt-1 ${pmBadge(sale.paymentMethod)}`}>{pmLabel(sale.paymentMethod)}</span>
+          <span className={`badge text-xs mt-1 ${pmBadge(sale.paymentMethod)}`}>
+            {pmLabel(sale.paymentMethod)}
+          </span>
         </div>
       </div>
       <div className="flex gap-2 mt-3">
@@ -46,6 +49,12 @@ function SaleCard({ sale, isAdmin, fmt, onView, onPrint }) {
           className="flex-1 btn-secondary py-1.5 text-xs justify-center text-primary-400">
           <Printer className="w-3.5 h-3.5" /> Imprimer
         </button>
+        {isAdmin && (
+          <button onClick={() => onDelete(sale)}
+            className="btn-secondary py-1.5 px-3 text-xs justify-center text-red-400 hover:bg-red-500/10 hover:border-red-500/20">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -59,6 +68,8 @@ export default function SalesHistoryPage() {
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [filters, setFilters] = useState({ startDate: '', endDate: '' });
   const [selectedSale, setSelectedSale] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [printSale, setPrintSale] = useState(null);
   const receiptRef = useRef(null);
 
@@ -85,6 +96,23 @@ export default function SalesHistoryPage() {
   const triggerPrint = (sale) => {
     setPrintSale(sale);
     setTimeout(handlePrint, 100);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { data } = await api.delete(`/sales/${deleteTarget._id}`);
+      toast.success(data.message || 'Vente supprimée');
+      setDeleteTarget(null);
+      // Close detail modal if the deleted sale was open
+      if (selectedSale?._id === deleteTarget._id) setSelectedSale(null);
+      fetchSales(pagination.page);
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('errors.serverError'));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const fmt = (n) => new Intl.NumberFormat('fr-MA', { minimumFractionDigits: 2 }).format(n);
@@ -136,7 +164,7 @@ export default function SalesHistoryPage() {
           </div>
         ) : (
           <>
-            {/* Desktop table — hidden on mobile */}
+            {/* Desktop table */}
             <div className="hidden md:block table-container">
               <table className="table">
                 <thead>
@@ -187,13 +215,22 @@ export default function SalesHistoryPage() {
                       <td>
                         <div className="flex justify-end gap-1.5">
                           <button onClick={() => setSelectedSale(sale)}
-                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                            title="Voir les détails">
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => triggerPrint(sale)}
-                            className="p-1.5 rounded-lg bg-white/5 hover:bg-primary-600/20 text-slate-400 hover:text-primary-400 transition-colors">
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-primary-600/20 text-slate-400 hover:text-primary-400 transition-colors"
+                            title="Imprimer le ticket">
                             <Printer className="w-3.5 h-3.5" />
                           </button>
+                          {isAdmin() && (
+                            <button onClick={() => setDeleteTarget(sale)}
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
+                              title="Supprimer la vente">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -202,8 +239,8 @@ export default function SalesHistoryPage() {
               </table>
             </div>
 
-            {/* Mobile cards — shown only on mobile */}
-            <div className="md:hidden divide-y divide-white/5">
+            {/* Mobile cards */}
+            <div className="md:hidden">
               {sales.map(sale => (
                 <SaleCard
                   key={sale._id}
@@ -212,6 +249,7 @@ export default function SalesHistoryPage() {
                   fmt={fmt}
                   onView={setSelectedSale}
                   onPrint={triggerPrint}
+                  onDelete={setDeleteTarget}
                 />
               ))}
             </div>
@@ -280,12 +318,35 @@ export default function SalesHistoryPage() {
               </div>
             </div>
 
-            <button onClick={() => triggerPrint(selectedSale)} className="btn-primary w-full justify-center py-3">
-              <Printer className="w-4 h-4" /> {t('sales.printReceipt')}
-            </button>
+            <div className="flex gap-3">
+              <button onClick={() => triggerPrint(selectedSale)}
+                className="btn-primary flex-1 justify-center py-3">
+                <Printer className="w-4 h-4" /> {t('sales.printReceipt')}
+              </button>
+              {isAdmin() && (
+                <button
+                  onClick={() => { setDeleteTarget(selectedSale); setSelectedSale(null); }}
+                  className="btn-danger px-4 justify-center">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         )}
       </Modal>
+
+      {/* Delete confirm dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        message={
+          deleteTarget
+            ? `Supprimer la vente "${deleteTarget.receiptNumber}" (${fmt(deleteTarget.total)} MAD) ?\n\nLe stock des produits sera automatiquement restauré.`
+            : ''
+        }
+      />
 
       {/* Hidden receipt for printing */}
       <div className="hidden">
