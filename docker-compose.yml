@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: garage_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: garage_db
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - garage_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: garage_backend
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/garage_db?authSource=admin
+      JWT_SECRET: super_secret_jwt_key_change_in_production
+      JWT_REFRESH_SECRET: super_secret_refresh_key_change_in_production
+      JWT_EXPIRE: 15m
+      JWT_REFRESH_EXPIRE: 7d
+      NODE_ENV: production
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    networks:
+      - garage_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: garage_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://backend:5000
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - garage_net
+
+volumes:
+  mongo_data:
+
+networks:
+  garage_net:
+    driver: bridge
