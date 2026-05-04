@@ -118,7 +118,7 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-in">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-display font-bold text-white">{t('dashboard.title')</h1>
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-white">{t('dashboard.title')}</h1>
         <p className="text-slate-500 text-sm mt-1">{new Date().toLocaleDateString('fr-MA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
       </div>
 

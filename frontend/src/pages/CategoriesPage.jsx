@@ -219,7 +219,7 @@ export default function CategoriesPage() {
     <div className="space-y-5 animate-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-display font-bold text-white">{t('categories.title')</h1>
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-white">{t('categories.title')}</h1>
           <p className="text-slate-500 text-sm">{categories.length} catégories</p>
         </div>
         <button onClick={() => setModal({ type: 'form', data: null })} className="btn-primary">

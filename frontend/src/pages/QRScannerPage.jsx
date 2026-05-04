@@ -34,7 +34,7 @@ export default function QRScannerPage() {
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-in">
       <div>
-        <h1 className="text-xl sm:text-2xl font-display font-bold text-white">{t('qr.scan')</h1>
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-white">{t('qr.scan')}</h1>
         <p className="text-slate-500 text-sm mt-1">{t('qr.scanInstructions')}</p>
       </div>
 
