@@ -11,6 +11,7 @@ import api from '../../services/api';
 
 /* ─── load products from component subcategories ─────────────── */
 async function loadCompSubcatProducts(categoryId, allCategories) {
+  if (!allCategories) return {};
   const compCats = allCategories.filter(
     c => (c.parent?._id || c.parent) === categoryId && c.isComponentCategory
   );
@@ -123,10 +124,10 @@ function EditUnitsTable({ productId, productName, onSell }) {
 
   return (
     <div className="space-y-2">
-      {units.map(unit => {
+      {(units || []).map(unit => {
         const isOpen = !!expanded[unit.unitNumber];
-        const inst   = unit.components.filter(c => c.status === 'installed').length;
-        const other  = unit.components.filter(c => c.status !== 'installed').length;
+        const inst   = (unit.components || []).filter(c => c.status === 'installed').length;
+        const other  = (unit.components || []).filter(c => c.status !== 'installed').length;
 
         return (
           <div key={unit.unitNumber} className="rounded-xl border border-white/5 overflow-visible">
@@ -185,10 +186,10 @@ function EditUnitsTable({ productId, productName, onSell }) {
             {/* Components list */}
             {isOpen && (
               <div className="border-t border-white/5 divide-y divide-white/5">
-                {unit.components.length === 0 && (
+                {(unit.components || []).length === 0 && (
                   <p className="text-xs text-slate-600 italic px-4 py-3">Aucun composant lié</p>
                 )}
-                {unit.components.map((comp, ci) => {
+                {(unit.components || []).map((comp, ci) => {
                   const key    = k(unit.unitNumber, ci);
                   const isChk  = !!checked[key];
                   const action = actionState[key];
@@ -294,7 +295,7 @@ function LiveUnitsPreview({ quantity, selectedComps, units, onUnitsChange }) {
   useEffect(() => {
     if (qty === 0 || selectedComps.length === 0) { onUnitsChange([]); return; }
     const newUnits = Array.from({ length: qty }, (_, i) => {
-      const existing = units.find(u => u.unitNumber === i + 1);
+      const existing = (units || []).find(u => u.unitNumber === i + 1);
       const components = selectedComps.map(comp => {
         const linkedId = comp.linkedProduct?._id || comp.linkedProduct;
         const existingComp = existing?.components.find(
@@ -317,7 +318,7 @@ function LiveUnitsPreview({ quantity, selectedComps, units, onUnitsChange }) {
   if (qty === 0 || selectedComps.length === 0) return null;
 
   const toggleComp = (unitIdx, compIdx) => {
-    const updated = units.map((u, ui) =>
+    const updated = (units || []).map((u, ui) =>
       ui !== unitIdx ? u : {
         ...u,
         components: u.components.map((c, ci) =>
@@ -329,16 +330,16 @@ function LiveUnitsPreview({ quantity, selectedComps, units, onUnitsChange }) {
   };
 
   const toggleCompAll = (compIdx, exclude) => {
-    onUnitsChange(units.map(u => ({
+    onUnitsChange((units || []).map(u => ({
       ...u,
       components: u.components.map((c, ci) => ci === compIdx ? { ...c, excluded: exclude } : c),
     })));
   };
 
-  const totalIncluded = units.reduce(
+  const totalIncluded = (units || []).reduce(
     (s, u) => s + u.components.filter(c => !c.excluded).length, 0
   );
-  const unitsWithExclusions = units.filter(u => u.components.some(c => c.excluded)).length;
+  const unitsWithExclusions = (units || []).filter(u => u.components.some(c => c.excluded)).length;
 
   return (
     <div className="border border-primary-500/20 rounded-xl overflow-hidden">
@@ -655,10 +656,10 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
           <select value={form.category} onChange={e => handleCategoryChange(e.target.value)}
             className="input-field" required>
             <option value="">{t('products.filterByCategory')}</option>
-            {categories.filter(c => !c.parent).map(c => (
+            {(categories || []).filter(c => !c.parent).map(c => (
               <optgroup key={c._id} label={c.name}>
                 <option value={c._id}>{c.name}</option>
-                {categories.filter(sub => (sub.parent?._id || sub.parent) === c._id).map(sub => (
+                {(categories || []).filter(sub => (sub.parent?._id || sub.parent) === c._id).map(sub => (
                   <option key={sub._id} value={sub._id}>
                     {'  '}&#8627; {sub.name}{sub.isComponentCategory ? ' (composants)' : ''}
                   </option>
@@ -735,19 +736,19 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
                     </div>
                     <div className="flex gap-2">
                       <button type="button"
-                        onClick={() => products.forEach(p =>
+                        onClick={() => (products || []).forEach(p =>
                           setSelectedSubcatProds(prev => ({ ...prev, [p._id]: { product: p, qty: prev[p._id]?.qty || 1 } }))
                         )}
                         className="text-xs text-slate-500 hover:text-primary-400 px-1.5 py-0.5 rounded">Tout</button>
                       <button type="button"
                         onClick={() => setSelectedSubcatProds(prev => {
-                          const n = { ...prev }; products.forEach(p => delete n[p._id]); return n;
+                          const n = { ...prev }; (products || []).forEach(p => delete n[p._id]); return n;
                         })}
                         className="text-xs text-slate-500 hover:text-red-400 px-1.5 py-0.5 rounded">Aucun</button>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {products.map(prod => {
+                    {(products || []).map(prod => {
                       const isSelected = !!selectedSubcatProds[prod._id];
                       const selData    = selectedSubcatProds[prod._id];
                       const free       = prod.quantity - (prod.quantityAssembled || 0);

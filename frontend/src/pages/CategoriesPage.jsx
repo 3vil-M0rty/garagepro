@@ -73,7 +73,7 @@ function CategoryForm({ category, parentId, parentColor, categories, onSuccess, 
   };
 
   // Only top-level categories can be parents
-  const parentOptions = categories.filter(c => !c.parent && (!category?._id || c._id !== category._id));
+  const parentOptions = (categories || []).filter(c => !c.parent && (!category?._id || c._id !== category._id));
 
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -191,9 +191,9 @@ export default function CategoriesPage() {
         api.get('/categories'),
         api.get('/products?limit=2000'),
       ]);
-      setCategories(catRes.data.data);
+      setCategories(catRes.data.data || []);
       const counts = {};
-      prodRes.data.data.forEach(p => {
+      (prodRes.data.data || []).forEach(p => {
         const cid = p.category?._id || p.category;
         counts[cid] = (counts[cid] || 0) + 1;
       });
@@ -216,8 +216,8 @@ export default function CategoriesPage() {
     } finally { setDeleting(false); }
   };
 
-  const topLevel = categories.filter(c => !c.parent);
-  const subOf = (parentId) => categories.filter(c => (c.parent?._id || c.parent) === parentId);
+  const topLevel = (categories || []).filter(c => !c.parent);
+  const subOf = (parentId) => (categories || []).filter(c => (c.parent?._id || c.parent) === parentId);
 
   const CategoryCard = ({ cat, isSubcat = false }) => {
     const subs = subOf(cat._id);

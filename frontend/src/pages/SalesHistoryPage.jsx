@@ -179,7 +179,7 @@ export default function SalesHistoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sales.map(sale => (
+                  {(sales || []).map(sale => (
                     <tr key={sale._id}>
                       <td>
                         <span className="font-mono text-xs bg-white/5 px-2 py-1 rounded text-primary-400">
@@ -241,7 +241,7 @@ export default function SalesHistoryPage() {
 
             {/* Mobile cards */}
             <div className="md:hidden">
-              {sales.map(sale => (
+              {(sales || []).map(sale => (
                 <SaleCard
                   key={sale._id}
                   sale={sale}

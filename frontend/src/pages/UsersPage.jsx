@@ -235,7 +235,7 @@ export default function UsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
+                  {(users || []).map(u => (
                     <tr key={u._id}>
                       <td>
                         <div className="flex items-center gap-3">
@@ -292,7 +292,7 @@ export default function UsersPage() {
 
             {/* Mobile cards */}
             <div className="md:hidden">
-              {users.map(u => (
+              {(users || []).map(u => (
                 <UserCard
                   key={u._id}
                   u={u}

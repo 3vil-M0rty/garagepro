@@ -236,7 +236,7 @@ export default function SalesPage() {
             )}
             {products.length > 0 && (
               <div className="space-y-1.5 mt-3">
-                {products.map(p => (
+                {(products || []).map(p => (
                   <button key={p._id} onClick={() => addToCart(p)}
                     className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/3 border border-white/5
                                hover:border-primary-500/30 hover:bg-primary-500/5 transition-all text-left group">

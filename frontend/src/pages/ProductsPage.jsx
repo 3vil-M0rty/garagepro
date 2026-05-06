@@ -287,7 +287,7 @@ function UsedInModal({ product, onClose, allProducts }) {
     }
   };
 
-  const installedCount = units.filter(u => u.unitCompStatus === 'installed').length;
+  const installedCount = (units || []).filter(u => u.unitCompStatus === 'installed').length;
 
   return (
     <Modal isOpen={!!product} onClose={onClose}
@@ -324,7 +324,7 @@ function UsedInModal({ product, onClose, allProducts }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {units.map((unit, i) => (
+            {(units || []).map((unit, i) => (
               <UnitCard
                 key={`${unit._id}-${unit.unitNumber}-${i}`}
                 unit={unit}
@@ -371,7 +371,7 @@ export default function ProductsPage() {
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   useEffect(() => {
-    api.get('/categories').then(r => setCategories(r.data.data)).catch(() => {});
+    api.get('/categories').then(r => setCategories(r.data.data || [])).catch(() => {});
   }, []);
 
   const handleDelete = async () => {
@@ -428,7 +428,7 @@ export default function ProductsPage() {
               onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
               className="input-field">
               <option value="">{t('products.allCategories')}</option>
-              {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+              {(categories || []).map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
             </select>
             <select value={filters.availability}
               onChange={e => setFilters(f => ({ ...f, availability: e.target.value }))}
@@ -460,7 +460,7 @@ export default function ProductsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {products.map(product => (
+          {(products || []).map(product => (
             <div key={product._id}
               className="card group hover:border-white/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl flex flex-col">
               {/* Color bar */}

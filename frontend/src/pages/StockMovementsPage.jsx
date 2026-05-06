@@ -101,7 +101,7 @@ export default function StockMovementsPage() {
             )}
             {showProductSearch && products.length > 0 && (
               <div className="absolute top-full mt-1 left-0 right-0 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-50 py-1">
-                {products.map(p => (
+                {(products || []).map(p => (
                   <button key={p._id} onClick={() => { setSelectedProduct(p); setShowProductSearch(false); setFilters(f => ({ ...f, productSearch: '' })); }}
                     className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors flex items-center gap-3">
                     <Package className="w-4 h-4 text-slate-500" />
@@ -163,7 +163,7 @@ export default function StockMovementsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {movements.map(m => {
+                  {(movements || []).map(m => {
                     const cfg = REASON_CONFIG[m.reason] || REASON_CONFIG.manual_in;
                     const Icon = cfg.icon;
                     return (
@@ -202,7 +202,7 @@ export default function StockMovementsPage() {
 
             {/* Mobile cards */}
             <div className="lg:hidden divide-y divide-white/5">
-              {movements.map(m => {
+              {(movements || []).map(m => {
                 const cfg = REASON_CONFIG[m.reason] || REASON_CONFIG.manual_in;
                 const Icon = cfg.icon;
                 return (
