@@ -103,13 +103,7 @@ export default function QRScanner({ onResult }) {
           disableFlip: false,
         },
         (decodedText) => {
-          // Success callback
-          try {
-            const parsed = JSON.parse(decodedText);
-            onResult(parsed.qrCodeId || parsed.id || decodedText);
-          } catch {
-            onResult(decodedText);
-          }
+          onResult(decodedText);
           stopScan();
         },
         () => { /* per-frame error — ignore */ }

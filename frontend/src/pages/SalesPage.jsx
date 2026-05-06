@@ -98,12 +98,22 @@ export default function SalesPage() {
         : i
     ));
 
-  const handleQRResult = async (qrCodeId) => {
+  const handleQRResult = async (raw) => {
     setShowQR(false);
     try {
-      const { data } = await api.get(`/products/qr/${qrCodeId}`);
-      addToCart(data.data);
-      toast.success(`${data.data.name} ajouté`);
+      let parsed = {};
+      try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+      const isUnitQR = parsed.productId && parsed.unitNumber != null;
+      if (isUnitQR) {
+        const { data } = await api.get(`/products/unit-qr/${parsed.qrCodeId}`);
+        addToCart(data.data);
+        toast.success(`${data.data.name} ajouté`);
+      } else {
+        const qrCodeId = parsed.qrCodeId || parsed.id || raw;
+        const { data } = await api.get(`/products/qr/${qrCodeId}`);
+        addToCart(data.data);
+        toast.success(`${data.data.name} ajouté`);
+      }
     } catch { toast.error(t('qr.notFound')); }
   };
 
