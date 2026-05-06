@@ -88,7 +88,7 @@ export default function SalesHistoryPage() {
   useEffect(() => { fetchSales(); }, [fetchSales]);
 
   const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
+    contentRef: receiptRef,
     documentTitle: printSale?.receiptNumber || 'Receipt',
     pageStyle: `@page { size: 58mm auto; margin: 0; }`,
   });

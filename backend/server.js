@@ -23,15 +23,7 @@ connectDB();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowed = [
-      process.env.FRONTEND_URL,
-      'http://localhost:5173',
-    ].filter(Boolean);
-    // Allow requests with no origin (Render health checks, curl, etc.)
-    if (!origin || allowed.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
 }));
 

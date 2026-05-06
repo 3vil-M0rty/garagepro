@@ -4,7 +4,6 @@ const categorySchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Category name is required'],
-    unique: true,
     trim: true,
     maxlength: [50, 'Category name cannot exceed 50 characters'],
   },
@@ -18,7 +17,17 @@ const categorySchema = new mongoose.Schema({
     default: '#6366f1',
     match: [/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Please enter a valid hex color'],
   },
-  // Default component templates — auto-filled when creating a product in this category
+  // Parent category — null means top-level
+  parent: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    default: null,
+  },
+  // If this is a "composants" subcategory, link to the parent's component products
+  isComponentCategory: {
+    type: Boolean,
+    default: false,
+  },
   defaultComponents: [{
     name: { type: String, required: true, trim: true },
   }],
@@ -28,5 +37,8 @@ const categorySchema = new mongoose.Schema({
     required: true,
   },
 }, { timestamps: true });
+
+// Compound unique: name must be unique within the same parent scope
+categorySchema.index({ name: 1, parent: 1 }, { unique: true });
 
 module.exports = mongoose.model('Category', categorySchema);

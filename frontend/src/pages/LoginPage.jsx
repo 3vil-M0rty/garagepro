@@ -108,13 +108,6 @@ export default function LoginPage() {
               {loading ? t('common.loading') : t('auth.login')}
             </button>
           </form>
-
-          {/* Demo credentials */}
-          <div className="mt-5 p-3 rounded-lg bg-white/3 border border-white/5">
-            <p className="text-xs text-slate-500 font-mono">
-              admin@garage.com / admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>

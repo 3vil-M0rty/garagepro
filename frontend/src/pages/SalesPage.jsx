@@ -5,7 +5,7 @@ import { useReactToPrint } from 'react-to-print';
 import {
   ShoppingCart, Plus, Minus, Trash2, QrCode, Search,
   Printer, CheckCircle, Package, X, Receipt as ReceiptIcon,
-  Percent,
+  Percent, Wrench, Info,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
@@ -20,7 +20,14 @@ export default function SalesPage() {
   const location = useLocation();
   const receiptRef = useRef(null);
 
-  const [cart, setCart] = useState([]);
+  const fromComponent = location.state?.fromComponent || null;
+
+  // Initialise cart directly — avoids StrictMode double-effect bug (qty becoming 2)
+  const [cart, setCart] = useState(() => {
+    const p = location.state?.product;
+    if (!p || p.quantity === 0) return [];
+    return [{ product: p, quantity: 1 }];
+  });
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,10 +45,6 @@ export default function SalesPage() {
   });
 
   const fmt = (n) => new Intl.NumberFormat('fr-MA', { minimumFractionDigits: 2 }).format(n);
-
-  useEffect(() => {
-    if (location.state?.product) addToCart(location.state.product);
-  }, []);
 
   const searchProducts = useCallback(async () => {
     if (!search.trim()) { setProducts([]); return; }
@@ -70,7 +73,7 @@ export default function SalesPage() {
         );
       }
       if (product.quantity === 0) { toast.error(t('products.outOfStock')); return prev; }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: 1, customPrice: product.price || 0 }];
     });
     setSearch(''); setProducts([]);
   };
@@ -88,6 +91,13 @@ export default function SalesPage() {
   const removeFromCart = (productId) =>
     setCart(prev => prev.filter(i => i.product._id !== productId));
 
+  const updatePrice = (productId, price) =>
+    setCart(prev => prev.map(i =>
+      i.product._id === productId
+        ? { ...i, customPrice: Math.max(0, parseFloat(price) || 0) }
+        : i
+    ));
+
   const handleQRResult = async (qrCodeId) => {
     setShowQR(false);
     try {
@@ -98,7 +108,7 @@ export default function SalesPage() {
   };
 
   // Calculations
-  const subtotal  = cart.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const subtotal  = cart.reduce((sum, i) => sum + (i.customPrice ?? i.product.price) * i.quantity, 0);
   const discount  = Number(form.discount) || 0;
   const tvaRate   = Number(form.tvaRate) || 0;
   const tvaAmount = form.tvaEnabled ? (subtotal - discount) * tvaRate / 100 : 0;
@@ -109,11 +119,19 @@ export default function SalesPage() {
     setSubmitting(true);
     try {
       const { data } = await api.post('/sales', {
-        items: cart.map(i => ({ product: i.product._id, quantity: i.quantity })),
+        items: cart.map(i => ({ product: i.product._id, quantity: i.quantity, unitPrice: i.customPrice ?? i.product.price })),
         discount,
         tax: tvaAmount,
         paymentMethod: form.paymentMethod,
         notes: form.notes,
+        // If selling a component separately, pass context so backend can mark the unit component
+        fromComponent: fromComponent ? {
+          parentId:      fromComponent.parentId,
+          parentName:    fromComponent.parentName,
+          componentIdx:  fromComponent.componentIdx,
+          componentName: fromComponent.componentName,
+          unitNumber:    fromComponent.unitNumber,
+        } : undefined,
       });
       setCompletedSale(data.data);
       setCart([]);
@@ -125,7 +143,7 @@ export default function SalesPage() {
   };
 
   const handlePrint = useReactToPrint({
-    content: () => receiptRef.current,
+    contentRef: receiptRef,
     documentTitle: completedSale?.receiptNumber || 'Receipt',
     pageStyle: `@page { size: 58mm auto; margin: 0; }`,
   });
@@ -164,6 +182,21 @@ export default function SalesPage() {
   return (
     <div className="space-y-4 animate-in">
       <h1 className="text-xl sm:text-2xl font-display font-bold text-white">{t('sales.newSale')}</h1>
+
+      {/* Context banner when coming from a component sell action */}
+      {fromComponent && (
+        <div className="flex items-start gap-3 p-3 rounded-xl bg-orange-900/20 border border-orange-800/40">
+          <Wrench className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-orange-300">
+              Vente d'un composant extrait de <span className="font-bold">"{fromComponent.parentName}"</span>
+            </p>
+            <p className="text-xs text-orange-400/70 mt-0.5">
+              Composant : {fromComponent.componentName}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col xl:flex-row gap-4">
 
@@ -238,32 +271,61 @@ export default function SalesPage() {
                 <span className="badge badge-purple text-xs">{cart.length}</span>
               </h3>
               <div className="space-y-2">
-                {cart.map(({ product, quantity }) => (
+                {cart.map(({ product, quantity, customPrice }) => (
                   <div key={product._id}
-                    className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white/3 border border-white/5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{product.name}</p>
-                      <p className="text-xs text-slate-500">
-                        {fmt(product.price)} × {quantity} =&nbsp;
-                        <span className="text-white font-medium">{fmt(product.price * quantity)}</span> MAD
-                      </p>
-                    </div>
-                    {/* Qty controls */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button onClick={() => updateQty(product._id, -1)}
-                        className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="w-6 text-center text-sm font-bold text-white tabular-nums">{quantity}</span>
-                      <button onClick={() => updateQty(product._id, 1)}
-                        className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <button onClick={() => removeFromCart(product._id)}
-                      className="text-red-400 hover:text-red-300 p-1 flex-shrink-0">
+                    className="rounded-xl bg-white/3 border border-white/5 overflow-hidden">
+                    {/* Top row: name + qty + remove */}
+                    <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{product.name}</p>
+                        <p className="text-xs text-slate-500">
+                          Catalogue: {fmt(product.price)} MAD
+                        </p>
+                      </div>
+                      {/* Qty controls */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => updateQty(product._id, -1)}
+                          className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-6 text-center text-sm font-bold text-white tabular-nums">{quantity}</span>
+                        <button onClick={() => updateQty(product._id, 1)}
+                          className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <button onClick={() => removeFromCart(product._id)}
+                        className="text-red-400 hover:text-red-300 p-1 flex-shrink-0">
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                      </button>
+                    </div>
+                    {/* Price row */}
+                    <div className="flex items-center gap-3 px-3 pb-3 border-t border-white/5 pt-2.5">
+                      <span className="text-xs text-slate-500 flex-shrink-0">Prix unitaire :</span>
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={customPrice}
+                          onChange={e => updatePrice(product._id, e.target.value)}
+                          className="input-field py-1.5 text-sm pr-12"
+                          placeholder={String(product.price)}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">MAD</span>
+                      </div>
+                      <span className="text-xs font-semibold text-white flex-shrink-0 tabular-nums">
+                        = {fmt(customPrice * quantity)} MAD
+                      </span>
+                      {customPrice !== product.price && (
+                        <button
+                          onClick={() => updatePrice(product._id, product.price)}
+                          className="text-xs text-slate-600 hover:text-primary-400 transition-colors flex-shrink-0"
+                          title="Remettre le prix catalogue">
+                          ↺
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

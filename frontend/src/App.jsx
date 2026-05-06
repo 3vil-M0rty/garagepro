@@ -10,6 +10,7 @@ import SalesPage from './pages/SalesPage';
 import SalesHistoryPage from './pages/SalesHistoryPage';
 import UsersPage from './pages/UsersPage';
 import QRScannerPage from './pages/QRScannerPage';
+import StockMovementsPage from './pages/StockMovementsPage';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="sales/new" element={<SalesPage />} />
           <Route path="sales/history" element={<SalesHistoryPage />} />
           <Route path="qr-scanner" element={<QRScannerPage />} />
+          <Route path="stock/movements" element={<ProtectedRoute adminOnly><StockMovementsPage /></ProtectedRoute>} />
           <Route path="users" element={<ProtectedRoute adminOnly><UsersPage /></ProtectedRoute>} />
         </Route>
       </Routes>

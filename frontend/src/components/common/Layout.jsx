@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, History,
-  Users, QrCode, Menu, X, LogOut, ChevronDown, Wrench, Globe
+  Users, QrCode, Menu, X, LogOut, ChevronDown, Wrench, Globe, ArrowLeftRight
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
@@ -52,6 +52,7 @@ export default function Layout() {
     { to: '/sales/new', icon: ShoppingCart, label: t('nav.newSale') },
     { to: '/sales/history', icon: History, label: t('nav.history') },
     { to: '/qr-scanner', icon: QrCode, label: 'QR Scanner' },
+    ...(isAdmin() ? [{ to: '/stock/movements', icon: ArrowLeftRight, label: 'Mouvements Stock' }] : []),
     ...(isAdmin() ? [{ to: '/users', icon: Users, label: t('nav.users') }] : []),
   ];
 
