@@ -29,7 +29,7 @@ function SaleCard({ sale, isAdmin, fmt, onView, onPrint, onDelete }) {
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             {sale.items?.length} article{sale.items?.length !== 1 ? 's' : ''}
-            {sale.items?.[0] && ` · ${sale.items[0].productName}${sale.items.length > 1 ? '…' : ''}`}
+            {sale.items?.[0] && ` · ${sale.items[0].productName}${sale.items?.length > 1 ? '…' : ''}`}
           </p>
         </div>
         <div className="text-right flex-shrink-0">
@@ -79,7 +79,7 @@ export default function SalesHistoryPage() {
       const params = new URLSearchParams({ page, limit: 15, ...filters });
       Object.keys(filters).forEach(k => !filters[k] && params.delete(k));
       const { data } = await api.get(`/sales?${params}`);
-      setSales(data.data);
+      setSales(data.data || []);
       setPagination({ page: data.page, pages: data.pages, total: data.total });
     } catch { toast.error(t('errors.serverError')); }
     finally { setLoading(false); }

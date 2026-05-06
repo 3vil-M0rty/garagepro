@@ -51,7 +51,7 @@ export default function SalesPage() {
     setLoading(true);
     try {
       const { data } = await api.get(`/products?search=${encodeURIComponent(search)}&availability=in_stock&limit=8`);
-      setProducts(data.data);
+      setProducts(data.data || []);
     } catch { toast.error(t('errors.serverError')); }
     finally { setLoading(false); }
   }, [search]);

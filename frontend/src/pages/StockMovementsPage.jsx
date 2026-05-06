@@ -38,7 +38,7 @@ export default function StockMovementsPage() {
       if (filters.reason)          params.set('reason', filters.reason);
       if (selectedProduct?._id)    params.set('productId', selectedProduct._id);
       const { data } = await api.get(`/products/movements?${params}`);
-      setMovements(data.data);
+      setMovements(data.data || []);
       setPagination({ page: data.page, pages: data.pages, total: data.total });
     } catch { toast.error(t('errors.serverError')); }
     finally { setLoading(false); }
@@ -52,7 +52,7 @@ export default function StockMovementsPage() {
     const timer = setTimeout(async () => {
       try {
         const { data } = await api.get(`/products?search=${encodeURIComponent(filters.productSearch)}&limit=6`);
-        setProducts(data.data);
+        setProducts(data.data || []);
       } catch {}
     }, 300);
     return () => clearTimeout(timer);

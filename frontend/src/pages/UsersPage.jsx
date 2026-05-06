@@ -182,7 +182,7 @@ export default function UsersPage() {
     setLoading(true);
     try {
       const { data } = await api.get('/users');
-      setUsers(data.data);
+      setUsers(data.data || []);
     } catch { toast.error(t('errors.serverError')); }
     finally { setLoading(false); }
   };

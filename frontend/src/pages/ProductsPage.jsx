@@ -257,7 +257,7 @@ function UsedInModal({ product, onClose, allProducts }) {
     if (!product) return;
     setLoading(true);
     api.get(`/products/${product._id}/used-in`)
-      .then(({ data }) => setUnits(data.data))
+      .then(({ data }) => setUnits(data.data || []))
       .catch(() => toast.error('Erreur de chargement'))
       .finally(() => setLoading(false));
   };
@@ -361,7 +361,7 @@ export default function ProductsPage() {
       const params = new URLSearchParams({ page, limit: 12, ...filters });
       Object.keys(filters).forEach(k => !filters[k] && params.delete(k));
       const { data } = await api.get(`/products?${params}`);
-      setProducts(data.data);
+      setProducts(data.data || []);
       setPagination({ page: data.page, pages: data.pages, total: data.total });
     } catch {
       toast.error(t('errors.serverError'));
