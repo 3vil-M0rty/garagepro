@@ -19,10 +19,10 @@ const PAPER_SIZES = [
 ];
 
 const STATUS_CFG = {
-  installed: { label: 'Installé',  cls: 'text-green-400 bg-green-900/20 border-green-800/40' },
-  sold:      { label: 'Vendu',     cls: 'text-slate-400 bg-slate-800/50 border-slate-700/40' },
-  moved:     { label: 'Déplacé',  cls: 'text-blue-400  bg-blue-900/20  border-blue-800/40' },
-  missing:   { label: 'Manquant', cls: 'text-red-400   bg-red-900/20   border-red-800/40' },
+  installed: { label: 'Installé', cls: 'text-green-400 bg-green-900/20 border-green-800/40' },
+  sold: { label: 'Vendu', cls: 'text-slate-400 bg-slate-800/50 border-slate-700/40' },
+  moved: { label: 'Déplacé', cls: 'text-blue-400  bg-blue-900/20  border-blue-800/40' },
+  missing: { label: 'Manquant', cls: 'text-red-400   bg-red-900/20   border-red-800/40' },
 };
 
 export default function QRScannerPage() {
@@ -31,16 +31,16 @@ export default function QRScannerPage() {
   const printRef = useRef(null);
 
   // Can be null | { type: 'product', data } | { type: 'unit', data, unit }
-  const [result, setResult]           = useState(null);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showDimModal, setShowDimModal] = useState(false);
   const [selectedSize, setSelectedSize] = useState(PAPER_SIZES[0]);
-  const [customWidth, setCustomWidth]  = useState(72);
+  const [customWidth, setCustomWidth] = useState(72);
 
   const paperWidth = selectedSize.width ?? customWidth;
-  const product    = result?.data || null;
-  const unit       = result?.unit || null;
+  const product = result?.data || null;
+  const unit = result?.unit || null;
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -85,7 +85,7 @@ export default function QRScannerPage() {
   const stockColor = product
     ? product.quantity === 0 ? 'text-red-400'
       : product.quantity <= product.lowStockThreshold ? 'text-yellow-400'
-      : 'text-green-400'
+        : 'text-green-400'
     : '';
 
   return (
@@ -124,18 +124,38 @@ export default function QRScannerPage() {
       {result?.type === 'unit' && product && unit && !loading && (
         <div className="card animate-in space-y-4">
           {/* Unit badge */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-primary-600/10 border border-primary-500/20">
-            <div className="w-10 h-10 rounded-xl bg-primary-600/30 border border-primary-500/40 flex flex-col items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-primary-300 leading-none">#{unit.unitNumber}</span>
-              <span className="text-xs text-primary-500 leading-none mt-0.5">unité</span>
-            </div>
+          {/* Unit badge */}
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-primary-600/10 border border-primary-500/20">
+
+            {/* Product image */}
+            {product.imageUrl ? (
+              <div className="w-20 h-20 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex-shrink-0">
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-xl bg-primary-600/20 border border-primary-500/30 flex items-center justify-center flex-shrink-0">
+                <Package className="w-8 h-8 text-primary-400" />
+              </div>
+            )}
+
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-white">{product.name}</h2>
+
               <p className="text-xs text-primary-400 font-mono mt-0.5">
                 {product.sku} — Unité #{unit.unitNumber}
               </p>
-              <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
-                style={{ backgroundColor: `${product.category?.color}20`, color: product.category?.color }}>
+
+              <span
+                className="text-xs px-2 py-0.5 rounded-full mt-2 inline-block"
+                style={{
+                  backgroundColor: `${product.category?.color}20`,
+                  color: product.category?.color,
+                }}
+              >
                 {product.category?.name}
               </span>
             </div>

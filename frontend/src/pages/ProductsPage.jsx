@@ -20,13 +20,13 @@ import QRModal from '../components/qr/QRModal';
 
 /* ── Stock bar: shows total / free / assembled ──────────────── */
 function StockBar({ product, onAssembledClick }) {
-  const total    = product.quantity ?? 0;
+  const total = product.quantity ?? 0;
   const assembled = product.quantityAssembled ?? 0;
-  const free     = Math.max(0, total - assembled);
-  const pctFree  = total > 0 ? (free / total) * 100 : 0;
-  const pctAss   = total > 0 ? (assembled / total) * 100 : 0;
+  const free = Math.max(0, total - assembled);
+  const pctFree = total > 0 ? (free / total) * 100 : 0;
+  const pctAss = total > 0 ? (assembled / total) * 100 : 0;
 
-  const freeColor  = free === 0 ? 'bg-red-500' : free <= product.lowStockThreshold ? 'bg-yellow-400' : 'bg-green-400';
+  const freeColor = free === 0 ? 'bg-red-500' : free <= product.lowStockThreshold ? 'bg-yellow-400' : 'bg-green-400';
 
   return (
     <div className="space-y-1.5">
@@ -89,22 +89,22 @@ function printUnitQR(parentName, unitNumber, qrCode, qrCodeId) {
 
 /* ── Unit card inside UsedInModal ────────────────────────────── */
 function UnitCard({ unit, allProducts, onAction }) {
-  const [showQR, setShowQR]       = useState(false);
-  const [showMove, setShowMove]   = useState(false);
-  const [targetProduct, setTarget]= useState('');
-  const [actLoading, setActLoad]  = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [showMove, setShowMove] = useState(false);
+  const [targetProduct, setTarget] = useState('');
+  const [actLoading, setActLoad] = useState(false);
 
   const STATUS_DOT = {
     installed: 'bg-green-400',
-    sold:      'bg-slate-500',
-    moved:     'bg-blue-400',
-    missing:   'bg-red-400',
+    sold: 'bg-slate-500',
+    moved: 'bg-blue-400',
+    missing: 'bg-red-400',
   };
   const STATUS_LABEL = {
     installed: 'Installé',
-    sold:      'Vendu',
-    moved:     'Déplacé',
-    missing:   'Manquant',
+    sold: 'Vendu',
+    moved: 'Déplacé',
+    missing: 'Manquant',
   };
 
   const handleSell = () => {
@@ -128,8 +128,8 @@ function UnitCard({ unit, allProducts, onAction }) {
     } finally { setActLoad(false); }
   };
 
-  const statusDot  = STATUS_DOT[unit.unitCompStatus]  || STATUS_DOT.installed;
-  const statusLabel= STATUS_LABEL[unit.unitCompStatus] || 'Installé';
+  const statusDot = STATUS_DOT[unit.unitCompStatus] || STATUS_DOT.installed;
+  const statusLabel = STATUS_LABEL[unit.unitCompStatus] || 'Installé';
   const isSoldOrMoved = unit.unitCompStatus === 'sold' || unit.unitCompStatus === 'moved';
 
   return (
@@ -251,7 +251,7 @@ function UnitCard({ unit, allProducts, onAction }) {
 /* ── Modal: units using this component ───────────────────────── */
 function UsedInModal({ product, onClose, allProducts }) {
   const navigate = useNavigate();
-  const [units, setUnits]     = useState([]);
+  const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = () => {
@@ -276,11 +276,11 @@ function UsedInModal({ product, onClose, allProducts }) {
           state: {
             product: data.data,
             fromComponent: {
-              parentId:     unit._id,
-              parentName:   unit.name,
+              parentId: unit._id,
+              parentName: unit.name,
               componentIdx: unit.componentIdx,
               componentName: unit.componentName,
-              unitNumber:   unit.unitNumber,
+              unitNumber: unit.unitNumber,
             },
           },
         });
@@ -344,15 +344,16 @@ function UsedInModal({ product, onClose, allProducts }) {
 export default function ProductsPage() {
   const { t } = useTranslation();
   const { isAdmin } = useAuthStore();
-  const [products, setProducts]     = useState([]);
+  const [products, setProducts] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [filters, setFilters]       = useState({ search: '', category: '', availability: '', minPrice: '', maxPrice: '' });
+  const [filters, setFilters] = useState({ search: '', category: '', availability: '', minPrice: '', maxPrice: '' });
   const [showFilters, setShowFilters] = useState(false);
-  const [modal, setModal]           = useState({ type: null, data: null });
+  const [modal, setModal] = useState({ type: null, data: null });
   const [usedInProduct, setUsedInProduct] = useState(null);
-  const [deleting, setDeleting]     = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fmt = (n) => new Intl.NumberFormat('fr-MA').format(n);
 
@@ -372,7 +373,7 @@ export default function ProductsPage() {
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   useEffect(() => {
-    api.get('/categories').then(r => setCategories(r.data.data || [])).catch(() => {});
+    api.get('/categories').then(r => setCategories(r.data.data || [])).catch(() => { });
   }, []);
 
   const handleDelete = async () => {
@@ -470,13 +471,28 @@ export default function ProductsPage() {
 
               {/* Product image */}
               {product.imageUrl && (
-                <div className="mb-3 -mt-1 rounded-lg overflow-hidden bg-white/5 border border-white/5 h-32 flex items-center justify-center">
+                <div className="relative mb-3 -mt-1 rounded-lg overflow-hidden bg-white/5 border border-white/5 h-32 group/image">
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover cursor-pointer transition-transform duration-300 group-hover/image:scale-105"
+                    onClick={() => setImagePreview({
+                      url: product.imageUrl,
+                      name: product.name,
+                    })}
                     onError={e => { e.target.parentElement.style.display = 'none'; }}
                   />
+
+                  {/* Fullscreen button */}
+                  <button
+                    onClick={() => setImagePreview({
+                      url: product.imageUrl,
+                      name: product.name,
+                    })}
+                    className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-lg opacity-0 group-hover/image:opacity-100 transition-all duration-200 backdrop-blur-sm"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
                 </div>
               )}
 
@@ -596,6 +612,38 @@ export default function ProductsPage() {
         product={usedInProduct}
         onClose={() => setUsedInProduct(null)}
         allProducts={products} />
+
+      {/* Fullscreen image preview */}
+      {imagePreview && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+
+          {/* Close button */}
+          <button
+            onClick={() => setImagePreview(null)}
+            className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 text-white p-3 rounded-xl transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Image container */}
+          <div className="relative max-w-7xl max-h-full w-full flex flex-col items-center">
+
+            {/* Title */}
+            <div className="mb-4 text-center">
+              <h2 className="text-white text-lg font-semibold">
+                {imagePreview.name}
+              </h2>
+            </div>
+
+            {/* Image */}
+            <img
+              src={imagePreview.url}
+              alt={imagePreview.name}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
