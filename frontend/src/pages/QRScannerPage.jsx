@@ -243,15 +243,42 @@ export default function QRScannerPage() {
       {result?.type === 'product' && product && !loading && (
         <div className="card animate-in space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${product.category?.color}20`, color: product.category?.color }}>
-              <Package className="w-6 h-6" />
-            </div>
+
+            {/* Product image */}
+            {product.imageUrl ? (
+              <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 bg-white/5 flex-shrink-0">
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div
+                className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  backgroundColor: `${product.category?.color}20`,
+                  color: product.category?.color,
+                }}
+              >
+                <Package className="w-6 h-6" />
+              </div>
+            )}
+
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-bold text-white">{product.name}</h2>
-              <p className="text-slate-500 text-sm font-mono">{product.sku}</p>
-              <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
-                style={{ backgroundColor: `${product.category?.color}20`, color: product.category?.color }}>
+
+              <p className="text-slate-500 text-sm font-mono">
+                {product.sku}
+              </p>
+
+              <span
+                className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
+                style={{
+                  backgroundColor: `${product.category?.color}20`,
+                  color: product.category?.color,
+                }}
+              >
                 {product.category?.name}
               </span>
             </div>
