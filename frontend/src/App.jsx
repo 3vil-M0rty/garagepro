@@ -57,7 +57,7 @@ export default function App() {
           <Route path="categories" element={<ProtectedRoute adminOnly><CategoriesPage /></ProtectedRoute>} />
           <Route path="sales/new" element={<SalesPage />} />
           <Route path="sales/history" element={<SalesHistoryPage />} />
-          <Route path="loans" element={<LoansPage />} />
+          {/* <Route path="loans" element={<LoansPage />} /> */}
           <Route path="qr-scanner" element={<QRScannerPage />} />
           <Route path="stock/movements" element={<ProtectedRoute adminOnly><StockMovementsPage /></ProtectedRoute>} />
           <Route path="users" element={<ProtectedRoute adminOnly><UsersPage /></ProtectedRoute>} />
