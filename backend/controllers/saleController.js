@@ -40,7 +40,7 @@ const createSale = async (req, res, next) => {
   const session = await Sale.startSession();
   session.startTransaction();
   try {
-    const { items, discount = 0, tax = 0, paymentMethod, notes, fromComponent } = req.body;
+    const { items, discount = 0, tax = 0, paymentMethod, notes, fromComponent, clientName, clientPhone, clientAddress } = req.body;
     const saleItems = [];
     let subtotal = 0;
 
@@ -83,10 +83,7 @@ const createSale = async (req, res, next) => {
       });
     }
 
-    // ── If this sale comes from a "sell component separately" action,
-    //    mark the component as 'sold' in the parent (keep it in array for history),
-    //    decrement quantityAssembled on the component product,
-    //    and mark the unit component as sold too ──
+    // ── fromComponent: remove sold component from parent product ───────────
     if (fromComponent?.parentId != null && fromComponent?.componentIdx != null) {
       const parent = await Product.findById(fromComponent.parentId).session(session);
       if (parent) {
@@ -96,9 +93,7 @@ const createSale = async (req, res, next) => {
         if (comp) {
           const usedQty = comp.quantity || 1;
 
-          // Mark component as sold (keep in array — user can add new one later)
-          // Note: template components don't have a status field, so we track in units
-          // Update the unit that contains this component (find first 'installed' unit with this comp)
+          // ① Mark as sold in unit sub-document
           if (fromComponent.unitNumber != null) {
             const unitIdx = parent.units.findIndex(u => u.unitNumber === Number(fromComponent.unitNumber));
             if (unitIdx >= 0) {
@@ -110,10 +105,26 @@ const createSale = async (req, res, next) => {
                 parent.units[unitIdx].components[unitCompIdx].soldAt = new Date();
               }
             }
+          } else {
+            // No unitNumber — mark first installed occurrence in any unit
+            for (const unit of parent.units) {
+              const ucIdx = unit.components.findIndex(
+                uc => String(uc.linkedProduct) === String(comp.linkedProduct) && uc.status === 'installed'
+              );
+              if (ucIdx >= 0) {
+                unit.components[ucIdx].status = 'sold';
+                unit.components[ucIdx].soldAt = new Date();
+                break;
+              }
+            }
           }
+
+          // ② Remove from template components[] — so UI stops showing it as installed
+          parent.components.splice(compIdx, 1);
+
           await parent.save({ session });
 
-          // Decrement assembledQty on the component's stock product
+          // ③ Decrement quantityAssembled on the component product
           if (comp.linkedProduct) {
             await Product.findByIdAndUpdate(
               comp.linkedProduct,
@@ -130,6 +141,9 @@ const createSale = async (req, res, next) => {
       items: saleItems, subtotal, discount, tax, total,
       seller: req.user._id, sellerName: req.user.username,
       paymentMethod, notes,
+      clientName: clientName || '',
+      clientPhone: clientPhone || '',
+      clientAddress: clientAddress || '',
     }], { session });
 
     await session.commitTransaction();

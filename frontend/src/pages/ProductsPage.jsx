@@ -15,6 +15,7 @@ import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import Pagination from '../components/common/Pagination';
 import ProductForm from '../components/inventory/ProductForm';
+import UnitsPanel from '../components/inventory/UnitsPanel';
 import QRModal from '../components/qr/QRModal';
 
 /* ── Stock bar: shows total / free / assembled ──────────────── */
@@ -467,6 +468,18 @@ export default function ProductsPage() {
               <div className="h-1 rounded-t-xl -mt-5 -mx-5 mb-4"
                 style={{ backgroundColor: product.category?.color || '#6366f1' }} />
 
+              {/* Product image */}
+              {product.imageUrl && (
+                <div className="mb-3 -mt-1 rounded-lg overflow-hidden bg-white/5 border border-white/5 h-32 flex items-center justify-center">
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                    onError={e => { e.target.parentElement.style.display = 'none'; }}
+                  />
+                </div>
+              )}
+
               {/* Name + category */}
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex-1 min-w-0">
@@ -518,16 +531,21 @@ export default function ProductsPage() {
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 mt-auto pt-4">
+              <div className="flex gap-2 mt-auto pt-4 flex-wrap">
+                <button onClick={() => setModal({ type: 'units', data: product })}
+                  className="flex-1 btn-secondary justify-center py-1.5 text-xs min-w-0">
+                  <Package className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{t('units.title')}</span>
+                </button>
                 <button onClick={() => setModal({ type: 'qr', data: product })}
-                  className="flex-1 btn-secondary justify-center py-1.5 text-xs">
-                  <QrCode className="w-3.5 h-3.5" /> QR
+                  className="btn-secondary justify-center py-1.5 px-2 text-xs">
+                  <QrCode className="w-3.5 h-3.5" />
                 </button>
 
                 {isAdmin() && (
                   <>
                     <button onClick={() => setModal({ type: 'form', data: product })}
-                      className="flex-1 btn-secondary justify-center py-1.5 text-xs">
+                      className="btn-secondary justify-center py-1.5 px-2 text-xs">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => setModal({ type: 'delete', data: product })}
@@ -552,6 +570,12 @@ export default function ProductsPage() {
           categories={categories}
           onSuccess={() => { setModal({ type: null, data: null }); fetchProducts(); }}
           onCancel={() => setModal({ type: null, data: null })} />
+      </Modal>
+
+      {/* Units modal */}
+      <Modal isOpen={modal.type === 'units'} onClose={() => setModal({ type: null, data: null })}
+        title={`${t('units.manageUnits')} — ${modal.data?.name || ''}`} size="xl">
+        {modal.data && <UnitsPanel product={modal.data} />}
       </Modal>
 
       {/* QR modal */}

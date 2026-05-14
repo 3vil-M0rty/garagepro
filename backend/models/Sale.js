@@ -31,6 +31,10 @@ const saleSchema = new mongoose.Schema({
     type: String,
     unique: true,
   },
+  quoteNumber: { type: String, unique: true, sparse: true },
+  clientName:  { type: String, trim: true, default: '' },
+  clientPhone: { type: String, trim: true, default: '' },
+  clientAddress: { type: String, trim: true, default: '' },
   items: [saleItemSchema],
   subtotal: { type: Number, required: true, min: 0 },
   tax: { type: Number, default: 0, min: 0 },
@@ -57,6 +61,11 @@ saleSchema.pre('save', async function (next) {
     const date = new Date();
     const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
     this.receiptNumber = `REC-${dateStr}-${String(count + 1).padStart(4, '0')}`;
+  }
+  if (!this.quoteNumber) {
+    const count = await mongoose.model('Sale').countDocuments();
+    const date = new Date();
+    this.quoteNumber = `DEV-${date.getFullYear()}-${String(count + 1).padStart(4, '0')}`;
   }
   next();
 });

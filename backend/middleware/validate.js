@@ -44,6 +44,7 @@ const productSchema = Joi.object({
   quantityAssembled: Joi.number().integer().min(0).default(0),
   lowStockThreshold: Joi.number().integer().min(0).default(5),
   description: Joi.string().max(500).allow('', null),
+  imageUrl: Joi.string().uri().allow('', null).default(null),
   components: Joi.array().items(
     Joi.object({
       name: Joi.string().required(),
@@ -77,13 +78,15 @@ const saleSchema = Joi.object({
   items: Joi.array().items(Joi.object({
     product: Joi.string().required(),
     quantity: Joi.number().integer().min(1).required(),
-    unitPrice: Joi.number().min(0).allow(null), // optional override — falls back to product price
+    unitPrice: Joi.number().min(0).allow(null),
   })).min(1).required(),
+  clientName:    Joi.string().max(100).allow('', null).default(''),
+  clientPhone:   Joi.string().max(30).allow('', null).default(''),
+  clientAddress: Joi.string().max(200).allow('', null).default(''),
   discount: Joi.number().min(0).default(0),
   tax: Joi.number().min(0).default(0),
   paymentMethod: Joi.string().valid('cash', 'card', 'transfer', 'other').default('cash'),
   notes: Joi.string().max(300).allow('', null),
-  // Optional: when selling a component separately, remove it from parent
   fromComponent: Joi.object({
     parentId:     Joi.string().required(),
     componentIdx: Joi.number().integer().min(0).required(),

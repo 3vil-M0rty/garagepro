@@ -127,6 +127,16 @@
       margin: 0;
       padding: 4mm;
     }
+    /* Devis A4 print */
+    body > *:not(#devis-print-root) { display: none !important; }
+    .devis-print {
+      display: block !important;
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 210mm;
+      background: #fff !important;
+      color: #000 !important;
+    }
   }
 
   /* RTL support */

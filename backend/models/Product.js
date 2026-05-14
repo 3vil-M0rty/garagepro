@@ -72,6 +72,8 @@ const productSchema = new mongoose.Schema({
   // PER-UNIT tracking — one entry per physical unit in stock
   units: [unitSchema],
 
+  imageUrl:  { type: String, default: null },
+
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   isActive:  { type: Boolean, default: true },
 }, { timestamps: true });

@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useReactToPrint } from 'react-to-print';
-import { History, Printer, Eye, X, Trash2 } from 'lucide-react';
+import { History, Printer, Eye, X, Trash2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import Pagination from '../components/common/Pagination';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
-import Receipt from '../components/sales/Receipt';
 import { useAuthStore } from '../store/authStore';
+import { printDevis } from '../utils/printDevis';
 
 const pmLabel = (pm) => ({ cash: 'Espèces', card: 'Carte', transfer: 'Virement', other: 'Autre' }[pm] || pm);
 const pmBadge = (pm) => ({ cash: 'badge-green', card: 'badge-blue', transfer: 'badge-purple', other: 'badge-yellow' }[pm] || 'badge-blue');
@@ -70,8 +69,6 @@ export default function SalesHistoryPage() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [printSale, setPrintSale] = useState(null);
-  const receiptRef = useRef(null);
 
   const fetchSales = useCallback(async (page = 1) => {
     setLoading(true);
@@ -87,15 +84,17 @@ export default function SalesHistoryPage() {
 
   useEffect(() => { fetchSales(); }, [fetchSales]);
 
-  const handlePrint = useReactToPrint({
-    contentRef: receiptRef,
-    documentTitle: printSale?.receiptNumber || 'Receipt',
-    pageStyle: `@page { size: 58mm auto; margin: 0; }`,
-  });
+  const [settings, setSettings] = useState({});
+  useEffect(() => {
+    api.get('/settings').then(({ data }) => { if (data.success) setSettings(data.data); }).catch(() => {});
+  }, []);
 
   const triggerPrint = (sale) => {
-    setPrintSale(sale);
-    setTimeout(handlePrint, 100);
+    printDevis({ sale, type: 'sale', settings }, 'print');
+  };
+
+  const triggerDownload = (sale) => {
+    printDevis({ sale, type: 'sale', settings }, 'download');
   };
 
   const handleDelete = async () => {
@@ -318,10 +317,14 @@ export default function SalesHistoryPage() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button onClick={() => triggerPrint(selectedSale)}
                 className="btn-primary flex-1 justify-center py-3">
                 <Printer className="w-4 h-4" /> {t('sales.printReceipt')}
+              </button>
+              <button onClick={() => triggerDownload(selectedSale)}
+                className="btn-secondary justify-center py-3 px-4" title="Télécharger">
+                <Download className="w-4 h-4" />
               </button>
               {isAdmin() && (
                 <button
@@ -348,10 +351,6 @@ export default function SalesHistoryPage() {
         }
       />
 
-      {/* Hidden receipt for printing */}
-      <div className="hidden">
-        <Receipt ref={receiptRef} sale={printSale || selectedSale} />
-      </div>
     </div>
   );
 }

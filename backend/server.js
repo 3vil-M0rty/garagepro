@@ -14,6 +14,9 @@ const categoryRoutes = require('./routes/categories');
 const productRoutes = require('./routes/products');
 const saleRoutes = require('./routes/sales');
 const dashboardRoutes = require('./routes/dashboard');
+const unitRoutes = require('./routes/units');
+const loanRoutes = require('./routes/loans');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
@@ -57,6 +60,9 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/units', unitRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

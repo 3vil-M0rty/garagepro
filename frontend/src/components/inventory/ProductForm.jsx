@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus, X, Check, Layers, Sparkles, Link2,
   ShoppingBag, MoveRight, Package,
-  AlertCircle, ChevronDown, ChevronRight, QrCode, Printer,
+  AlertCircle, ChevronDown, ChevronRight, QrCode, Printer, Upload,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
@@ -434,7 +434,7 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
 
   const [form, setForm] = useState({
     name: '', category: '', price: '', quantity: '',
-    lowStockThreshold: 5, description: '', components: [],
+    lowStockThreshold: 5, description: '', components: [], imageUrl: '',
   });
 
   // NEW product state
@@ -465,6 +465,7 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
       lowStockThreshold: product.lowStockThreshold ?? 5,
       description:       product.description || '',
       components:        product.components || [],
+      imageUrl:          product.imageUrl || '',
     });
     if (catId) {
       loadCompSubcatProducts(catId, categories).then(res =>
@@ -693,6 +694,40 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
           <textarea value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             className="input-field resize-none" rows={2} />
+        </div>
+
+        {/* Image URL + disabled upload */}
+        <div className="sm:col-span-2">
+          <label className="block text-sm font-medium text-slate-400 mb-1.5">{t('products.imageUrl')}</label>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={form.imageUrl}
+              onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
+              className="input-field flex-1"
+              placeholder={t('products.imageUrlPlaceholder')}
+            />
+            <button
+              type="button"
+              disabled
+              title={t('products.uploadDisabled')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/5 bg-slate-800/40 text-slate-600 cursor-not-allowed text-sm select-none flex-shrink-0"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('products.uploadImage')}</span>
+            </button>
+          </div>
+          {form.imageUrl && (
+            <div className="mt-2">
+              <img
+                src={form.imageUrl}
+                alt="Aperçu"
+                className="h-16 w-auto rounded-lg border border-white/10 object-cover bg-white/5"
+                onError={e => { e.target.style.display = 'none'; }}
+                onLoad={e => { e.target.style.display = 'block'; }}
+              />
+            </div>
+          )}
         </div>
       </div>
 

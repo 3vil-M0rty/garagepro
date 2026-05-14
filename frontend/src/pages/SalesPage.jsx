@@ -1,24 +1,22 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { useReactToPrint } from 'react-to-print';
 import {
   ShoppingCart, Plus, Minus, Trash2, QrCode, Search,
   Printer, CheckCircle, Package, X, Receipt as ReceiptIcon,
-  Percent, Wrench, Info,
+  Percent, Wrench, Info, Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import QRScanner from '../components/qr/QRScanner';
-import Receipt from '../components/sales/Receipt';
 import Modal from '../components/common/Modal';
+import { printDevis } from '../utils/printDevis';
 
 const DEFAULT_TVA_RATE = 20; // %
 
 export default function SalesPage() {
   const { t } = useTranslation();
   const location = useLocation();
-  const receiptRef = useRef(null);
 
   const fromComponent = location.state?.fromComponent || null;
 
@@ -38,11 +36,19 @@ export default function SalesPage() {
   // TVA: rate (%) is stored, computed amount applied to subtotal
   const [form, setForm] = useState({
     discount: '',
-    tvaRate: DEFAULT_TVA_RATE,   // editable percentage
-    tvaEnabled: true,             // toggle TVA on/off
+    tvaRate: DEFAULT_TVA_RATE,
+    tvaEnabled: true,
     paymentMethod: 'cash',
     notes: '',
+    clientName: '',
+    clientPhone: '',
+    clientAddress: '',
   });
+  const [settings, setSettings] = useState({});
+
+  useEffect(() => {
+    api.get('/settings').then(({ data }) => { if (data.success) setSettings(data.data); }).catch(() => {});
+  }, []);
 
   const fmt = (n) => new Intl.NumberFormat('fr-MA', { minimumFractionDigits: 2 }).format(n);
 
@@ -134,7 +140,9 @@ export default function SalesPage() {
         tax: tvaAmount,
         paymentMethod: form.paymentMethod,
         notes: form.notes,
-        // If selling a component separately, pass context so backend can mark the unit component
+        clientName: form.clientName,
+        clientPhone: form.clientPhone,
+        clientAddress: form.clientAddress,
         fromComponent: fromComponent ? {
           parentId:      fromComponent.parentId,
           parentName:    fromComponent.parentName,
@@ -145,18 +153,22 @@ export default function SalesPage() {
       });
       setCompletedSale(data.data);
       setCart([]);
-      setForm({ discount: '', tvaRate: DEFAULT_TVA_RATE, tvaEnabled: true, paymentMethod: 'cash', notes: '' });
+      setForm({ discount: '', tvaRate: DEFAULT_TVA_RATE, tvaEnabled: true, paymentMethod: 'cash', notes: '', clientName: '', clientPhone: '', clientAddress: '' });
       toast.success(t('sales.saleSuccess'));
     } catch (err) {
       toast.error(err.response?.data?.message || t('errors.serverError'));
     } finally { setSubmitting(false); }
   };
 
-  const handlePrint = useReactToPrint({
-    contentRef: receiptRef,
-    documentTitle: completedSale?.receiptNumber || 'Receipt',
-    pageStyle: `@page { size: 58mm auto; margin: 0; }`,
-  });
+  const handlePrint = () => {
+    if (!completedSale) return;
+    printDevis({ sale: completedSale, type: 'sale', settings }, 'print');
+  };
+
+  const handleDownload = () => {
+    if (!completedSale) return;
+    printDevis({ sale: completedSale, type: 'sale', settings }, 'download');
+  };
 
   // ── Success screen ──────────────────────────────────────────────────────
   if (completedSale) {
@@ -167,23 +179,23 @@ export default function SalesPage() {
             <CheckCircle className="w-8 h-8 text-green-400" />
           </div>
           <h2 className="text-xl font-bold text-white mb-1">{t('sales.saleSuccess')}</h2>
-          <p className="text-slate-500 text-sm font-mono">{completedSale.receiptNumber}</p>
+          <p className="text-slate-500 text-sm font-mono">{completedSale.quoteNumber || completedSale.receiptNumber}</p>
           <p className="text-3xl font-bold text-green-400 mt-4">{fmt(completedSale.total)}</p>
           <p className="text-slate-500 text-sm">MAD</p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={handlePrint} className="btn-primary justify-center py-3">
+        <div className="grid grid-cols-3 gap-2">
+          <button onClick={handlePrint} className="btn-primary justify-center py-3 col-span-2">
             <Printer className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('sales.printReceipt')}</span>
-            <span className="sm:hidden">Imprimer</span>
+            {t('sales.printReceipt')}
           </button>
-          <button onClick={() => setCompletedSale(null)} className="btn-secondary justify-center py-3">
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nouvelle vente</span>
-            <span className="sm:hidden">Nouveau</span>
+          <button onClick={handleDownload} className="btn-secondary justify-center py-3" title="Télécharger HTML">
+            <Download className="w-4 h-4" />
           </button>
         </div>
-        <div className="hidden"><Receipt ref={receiptRef} sale={completedSale} /></div>
+        <button onClick={() => setCompletedSale(null)} className="btn-secondary w-full justify-center py-2.5">
+          <Plus className="w-4 h-4" />
+          {t('sales.newSale')}
+        </button>
       </div>
     );
   }
@@ -418,6 +430,29 @@ export default function SalesPage() {
                   = {fmt(tvaAmount)} MAD ({form.tvaRate}% sur {fmt(subtotal - discount)} MAD)
                 </p>
               )}
+            </div>
+
+            {/* Client info */}
+            <div className="border-t border-white/5 pt-3 space-y-2">
+              <label className="block text-xs text-slate-500 font-semibold uppercase tracking-wide">{t('sales.clientInfo')}</label>
+              <input
+                className="input-field text-sm"
+                value={form.clientName}
+                onChange={e => setForm(f => ({ ...f, clientName: e.target.value }))}
+                placeholder={t('sales.clientName')}
+              />
+              <input
+                className="input-field text-sm"
+                value={form.clientPhone}
+                onChange={e => setForm(f => ({ ...f, clientPhone: e.target.value }))}
+                placeholder={t('sales.clientPhone')}
+              />
+              <input
+                className="input-field text-sm"
+                value={form.clientAddress}
+                onChange={e => setForm(f => ({ ...f, clientAddress: e.target.value }))}
+                placeholder={t('sales.clientAddress')}
+              />
             </div>
 
             {/* Payment method */}

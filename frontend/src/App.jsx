@@ -11,6 +11,8 @@ import SalesHistoryPage from './pages/SalesHistoryPage';
 import UsersPage from './pages/UsersPage';
 import QRScannerPage from './pages/QRScannerPage';
 import StockMovementsPage from './pages/StockMovementsPage';
+import LoansPage from './pages/LoansPage';
+import SettingsPage from './pages/SettingsPage';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -25,7 +27,6 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
-// React Router v6 → v7 future flags (suppresses console warnings)
 const routerFuture = {
   v7_startTransition: true,
   v7_relativeSplatPath: true,
@@ -56,9 +57,11 @@ export default function App() {
           <Route path="categories" element={<ProtectedRoute adminOnly><CategoriesPage /></ProtectedRoute>} />
           <Route path="sales/new" element={<SalesPage />} />
           <Route path="sales/history" element={<SalesHistoryPage />} />
+          <Route path="loans" element={<LoansPage />} />
           <Route path="qr-scanner" element={<QRScannerPage />} />
           <Route path="stock/movements" element={<ProtectedRoute adminOnly><StockMovementsPage /></ProtectedRoute>} />
           <Route path="users" element={<ProtectedRoute adminOnly><UsersPage /></ProtectedRoute>} />
+          <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

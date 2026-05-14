@@ -3,7 +3,8 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, History,
-  Users, QrCode, Menu, X, LogOut, ChevronDown, Wrench, Globe, ArrowLeftRight
+  Users, QrCode, Menu, X, LogOut, ChevronDown, Wrench, Globe, ArrowLeftRight,
+  Settings, BookOpen,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
@@ -51,9 +52,11 @@ export default function Layout() {
     ...(isAdmin() ? [{ to: '/categories', icon: Tag, label: t('nav.categories') }] : []),
     { to: '/sales/new', icon: ShoppingCart, label: t('nav.newSale') },
     { to: '/sales/history', icon: History, label: t('nav.history') },
+    { to: '/loans', icon: BookOpen, label: t('nav.loans') },
     { to: '/qr-scanner', icon: QrCode, label: 'QR Scanner' },
-    ...(isAdmin() ? [{ to: '/stock/movements', icon: ArrowLeftRight, label: 'Mouvements Stock' }] : []),
+    ...(isAdmin() ? [{ to: '/stock/movements', icon: ArrowLeftRight, label: t('nav.stockMovements') }] : []),
     ...(isAdmin() ? [{ to: '/users', icon: Users, label: t('nav.users') }] : []),
+    ...(isAdmin() ? [{ to: '/settings', icon: Settings, label: t('nav.settings') }] : []),
   ];
 
   const currentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0];
@@ -167,3 +170,4 @@ export default function Layout() {
     </div>
   );
 }
+

@@ -3,40 +3,43 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import {
   TrendingUp, TrendingDown, ArrowLeftRight, Package,
-  ShoppingCart, Wrench, RotateCcw, X, Filter, Search
+  ShoppingCart, Wrench, RotateCcw, X, Filter, Search,
+  Eye
 } from 'lucide-react';
+import Modal from '../components/common/Modal';
 import api from '../services/api';
 import Pagination from '../components/common/Pagination';
 import toast from 'react-hot-toast';
 
 const REASON_CONFIG = {
-  sale:            { label: 'Vente',                icon: ShoppingCart,  color: 'text-red-400',    bg: 'bg-red-900/20 border-red-800/40' },
-  sale_cancel:     { label: 'Annulation vente',     icon: RotateCcw,     color: 'text-green-400',  bg: 'bg-green-900/20 border-green-800/40' },
-  assembly:        { label: 'Assemblage',            icon: Wrench,        color: 'text-orange-400', bg: 'bg-orange-900/20 border-orange-800/40' },
-  disassembly:     { label: 'Désassemblage',        icon: Wrench,        color: 'text-blue-400',   bg: 'bg-blue-900/20 border-blue-800/40' },
-  component_sold:  { label: 'Composant vendu',      icon: ShoppingCart,  color: 'text-red-400',    bg: 'bg-red-900/20 border-red-800/40' },
-  component_moved: { label: 'Composant déplacé',    icon: ArrowLeftRight, color: 'text-purple-400', bg: 'bg-purple-900/20 border-purple-800/40' },
-  manual_in:       { label: 'Entrée manuelle',      icon: TrendingUp,    color: 'text-green-400',  bg: 'bg-green-900/20 border-green-800/40' },
-  manual_out:      { label: 'Sortie manuelle',      icon: TrendingDown,  color: 'text-red-400',    bg: 'bg-red-900/20 border-red-800/40' },
-  initial:         { label: 'Stock initial',        icon: Package,       color: 'text-slate-400',  bg: 'bg-slate-800/50 border-slate-700/40' },
+  sale: { label: 'Vente', icon: ShoppingCart, color: 'text-red-400', bg: 'bg-red-900/20 border-red-800/40' },
+  sale_cancel: { label: 'Annulation vente', icon: RotateCcw, color: 'text-green-400', bg: 'bg-green-900/20 border-green-800/40' },
+  assembly: { label: 'Assemblage', icon: Wrench, color: 'text-orange-400', bg: 'bg-orange-900/20 border-orange-800/40' },
+  disassembly: { label: 'Désassemblage', icon: Wrench, color: 'text-blue-400', bg: 'bg-blue-900/20 border-blue-800/40' },
+  component_sold: { label: 'Composant vendu', icon: ShoppingCart, color: 'text-red-400', bg: 'bg-red-900/20 border-red-800/40' },
+  component_moved: { label: 'Composant déplacé', icon: ArrowLeftRight, color: 'text-purple-400', bg: 'bg-purple-900/20 border-purple-800/40' },
+  manual_in: { label: 'Entrée manuelle', icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-900/20 border-green-800/40' },
+  manual_out: { label: 'Sortie manuelle', icon: TrendingDown, color: 'text-red-400', bg: 'bg-red-900/20 border-red-800/40' },
+  initial: { label: 'Stock initial', icon: Package, color: 'text-slate-400', bg: 'bg-slate-800/50 border-slate-700/40' },
 };
 
 export default function StockMovementsPage() {
   const { t } = useTranslation();
   const [movements, setMovements] = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [filters, setFilters]     = useState({ reason: '', productSearch: '' });
-  const [products, setProducts]   = useState([]);
+  const [filters, setFilters] = useState({ reason: '', productSearch: '' });
+  const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSearch, setShowProductSearch] = useState(false);
+  const [selectedMovement, setSelectedMovement] = useState(null);
 
   const fetchMovements = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, limit: 30 });
-      if (filters.reason)          params.set('reason', filters.reason);
-      if (selectedProduct?._id)    params.set('productId', selectedProduct._id);
+      if (filters.reason) params.set('reason', filters.reason);
+      if (selectedProduct?._id) params.set('productId', selectedProduct._id);
       const { data } = await api.get(`/products/movements?${params}`);
       setMovements(data.data || []);
       setPagination({ page: data.page, pages: data.pages, total: data.total });
@@ -53,7 +56,7 @@ export default function StockMovementsPage() {
       try {
         const { data } = await api.get(`/products?search=${encodeURIComponent(filters.productSearch)}&limit=6`);
         setProducts(data.data || []);
-      } catch {}
+      } catch { }
     }, 300);
     return () => clearTimeout(timer);
   }, [filters.productSearch]);
@@ -160,6 +163,7 @@ export default function StockMovementsPage() {
                     <th>Opérateur</th>
                     <th>Date</th>
                     <th>Note</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,7 +171,11 @@ export default function StockMovementsPage() {
                     const cfg = REASON_CONFIG[m.reason] || REASON_CONFIG.manual_in;
                     const Icon = cfg.icon;
                     return (
-                      <tr key={m._id}>
+                      <tr
+                        key={m._id}
+                        onClick={() => setSelectedMovement(m)}
+                        className="cursor-pointer hover:bg-white/[0.03] transition-colors"
+                      >
                         <td>
                           <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-medium ${cfg.bg} ${cfg.color}`}>
                             <Icon className="w-3 h-3" />
@@ -193,6 +201,19 @@ export default function StockMovementsPage() {
                           {format(new Date(m.createdAt), 'dd/MM/yy HH:mm')}
                         </td>
                         <td className="text-xs text-slate-500 max-w-[140px] truncate">{m.note || '—'}</td>
+                        <td>
+                          <div className="flex justify-end">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedMovement(m);
+                              }}
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -206,7 +227,11 @@ export default function StockMovementsPage() {
                 const cfg = REASON_CONFIG[m.reason] || REASON_CONFIG.manual_in;
                 const Icon = cfg.icon;
                 return (
-                  <div key={m._id} className="p-4">
+                  <div
+                    key={m._id}
+                    onClick={() => setSelectedMovement(m)}
+                    className="p-4 cursor-pointer hover:bg-white/[0.03] transition-colors"
+                  >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-white text-sm truncate">{m.productName || m.product?.name}</p>
@@ -235,6 +260,121 @@ export default function StockMovementsPage() {
         )}
         <Pagination {...pagination} onPageChange={fetchMovements} />
       </div>
+      <Modal
+        isOpen={!!selectedMovement}
+        onClose={() => setSelectedMovement(null)}
+        title="Détail mouvement"
+        size="md"
+      >
+        {selectedMovement && (() => {
+          const cfg =
+            REASON_CONFIG[selectedMovement.reason] || REASON_CONFIG.manual_in;
+
+          const Icon = cfg.icon;
+
+          return (
+            <div className="p-4 sm:p-6 space-y-4">
+
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium ${cfg.bg} ${cfg.color}`}>
+                  <Icon className="w-4 h-4" />
+                  {cfg.label}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+
+                <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                  <p className="text-xs text-slate-500">Produit</p>
+                  <p className="text-sm font-medium text-white mt-1">
+                    {selectedMovement.productName || selectedMovement.product?.name}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1 font-mono">
+                    {selectedMovement.productSku || selectedMovement.product?.sku}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                  <p className="text-xs text-slate-500">Date</p>
+                  <p className="text-sm font-medium text-white mt-1">
+                    {format(new Date(selectedMovement.createdAt), 'dd/MM/yyyy HH:mm')}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                  <p className="text-xs text-slate-500">Stock avant</p>
+                  <p className="text-lg font-bold text-slate-300 mt-1">
+                    {fmt(selectedMovement.quantityBefore)}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                  <p className="text-xs text-slate-500">Stock après</p>
+                  <p className="text-lg font-bold text-white mt-1">
+                    {fmt(selectedMovement.quantityAfter)}
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="p-4 rounded-xl bg-white/3 border border-white/5">
+                <p className="text-xs text-slate-500 mb-2">Variation</p>
+
+                <div className={`text-2xl font-bold tabular-nums ${selectedMovement.delta > 0
+                    ? 'text-green-400'
+                    : selectedMovement.delta < 0
+                      ? 'text-red-400'
+                      : 'text-slate-400'
+                  }`}>
+                  {selectedMovement.delta > 0 ? '+' : ''}
+                  {fmt(selectedMovement.delta)}
+                </div>
+              </div>
+
+              {(selectedMovement.relatedProductName ||
+                selectedMovement.relatedProduct?.name) && (
+                  <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                    <p className="text-xs text-slate-500">Produit lié</p>
+                    <p className="text-sm font-medium text-white mt-1">
+                      {selectedMovement.relatedProductName ||
+                        selectedMovement.relatedProduct?.name}
+                    </p>
+                  </div>
+                )}
+
+              <div className="grid grid-cols-2 gap-3">
+
+                <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                  <p className="text-xs text-slate-500">Opérateur</p>
+                  <p className="text-sm font-medium text-white mt-1">
+                    {selectedMovement.doneByName ||
+                      selectedMovement.doneBy?.username ||
+                      '—'}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                  <p className="text-xs text-slate-500">Raison</p>
+                  <p className="text-sm font-medium text-white mt-1">
+                    {cfg.label}
+                  </p>
+                </div>
+
+              </div>
+
+              {selectedMovement.note && (
+                <div className="p-3 rounded-xl bg-white/3 border border-white/5">
+                  <p className="text-xs text-slate-500 mb-2">Note</p>
+                  <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                    {selectedMovement.note}
+                  </p>
+                </div>
+              )}
+
+            </div>
+          );
+        })()}
+      </Modal>
     </div>
   );
 }

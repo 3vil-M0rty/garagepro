@@ -412,6 +412,10 @@ const sellComponentSeparately = async (req, res, next) => {
     });
     await Product.findByIdAndUpdate(comp.linkedProduct, { $inc: { quantityAssembled: -quantity } }, { session });
 
+    // Remove component from parent template array so UI reflects the sale
+    parent.components.splice(Number(componentIdx), 1);
+    await parent.save({ session });
+
     await session.commitTransaction();
     res.json({ success: true, message: 'Composant vendu séparément' });
   } catch (error) { await session.abortTransaction(); next(error); }
